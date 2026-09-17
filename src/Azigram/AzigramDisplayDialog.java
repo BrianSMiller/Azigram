@@ -147,12 +147,9 @@ public class AzigramDisplayDialog extends PamDialog {
 		absoluteFadeThresholdDbSpinner = new JSpinner(new SpinnerNumberModel(90., -40., 250., 1.));
 
 		percentileSpinner.setToolTipText("<HTML>Target percentile (0-100) the background tracker follows.<br>"
-				+ "Lower values (e.g. 20-30) sit further below the bulk of the signal and<br>"
-				+ "are usually a better noise-floor estimate than the median (50), since<br>"
-				+ "they stay accurate even while real signal is present some of the time -<br>"
-				+ "though a signal that sweeps quickly through each frequency bin (e.g. a<br>"
-				+ "fast chirp) may actually want a HIGHER percentile, since any one bin<br>"
-				+ "sees real signal only briefly. Tune this against real data.</HTML>");
+				+ "Higher values (default 85) fade more of the display to black, leaving<br>"
+				+ "only the strongest signals in colour. Lower values show more colour.<br>"
+				+ "Tune this against your own data.</HTML>");
 		stepDbPerSecondSpinner.setToolTipText("<HTML>How fast (dB/second) the tracked background can rise or fall.<br>"
 				+ "Larger = faster-adapting but noisier; smaller = slower but more stable.</HTML>");
 		runInSecondsSpinner.setToolTipText("<HTML>How many seconds of initial data the tracker uses to snap to<br>"

@@ -45,14 +45,14 @@ public class AzigramParameters implements Serializable, ManagedParameters, Clone
 	 * Target percentile (0-100) used by the per-bin background/noise-floor
 	 * tracker (see AzigramPercentileBackground) to distinguish real
 	 * directional signal from background/incoherent demux noise for display
-	 * fading. Lower values (e.g. 20-30) sit further below the bulk of the
-	 * signal and are usually a better noise-floor estimate than the median
-	 * (50), since they remain accurate even when real signal is present a
-	 * meaningful fraction of the time. Replaces the original fixed dB
+	 * fading. A high value (default 85) marks only the strongest cells as
+	 * signal, so weak and incoherent cells fade to black. This worked much
+	 * better than 25 on synthetic chirps. Lower values show more of the
+	 * display in colour. Replaces the original fixed dB
 	 * threshold, which had to be re-tuned by hand for every recording since
 	 * ambient noise varies by frequency, deployment, and season.
 	 */
-	public double backgroundPercentile = 25;
+	public double backgroundPercentile = 85;
 
 	/**
 	 * How fast (in dB per second) the tracked background can rise or fall.

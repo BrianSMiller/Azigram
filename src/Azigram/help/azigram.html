@@ -51,9 +51,9 @@ bearings. There are two ways to decide what counts as weak.</p>
 tracks the background level in each frequency bin over time, and fades cells by
 how far they sit above it.</p>
 <ul>
-<li><em>Background percentile</em> (default 25%). The percentile each bin follows.
-Low values suit most data. Fast sweeps, which pass through each bin briefly, may
-need a higher value.</li>
+<li><em>Background percentile</em> (default 85%). The percentile each bin follows.
+Higher values fade more of the display to black, so only the strongest signals
+show in colour. Lower values show more colour, but more of it is noise.</li>
 <li><em>Background step rate</em> (default 2 dB/s). How fast the background can
 change. Faster adapts sooner but is noisier.</li>
 <li><em>Background run-in</em> (default 2 s). How much initial data is used to set
