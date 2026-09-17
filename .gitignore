@@ -1,0 +1,9 @@
+# Build output
+/bin/
+*.class
+*.jar
+
+# Logs and crash files
+*.log
+hs_err_pid*
+replay_pid*

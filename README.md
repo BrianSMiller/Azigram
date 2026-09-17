@@ -1,0 +1,55 @@
+# Azigram
+
+A PAMGuard plugin that shows directional information from DIFAR sonobuoys.
+
+The Azigram looks like a spectrogram, but colour shows the bearing of arrival in
+each time-frequency cell, not its power. Weak cells fade to black, so only real
+signals show clear bearings.
+
+The plugin implements the Azigram algorithm, and frequency domain demultiplexing
+of DIFAR signals, described by Thode et al. (2019).
+
+This plugin was part of PAMGuard core until version 2.03. It is beta software.
+
+## Requirements
+
+- PAMGuard 2.03.00 or later.
+- Multiplexed DIFAR sonobuoy data with at least 24 kHz of bandwidth.
+
+## Installing
+
+1. Download the jar file from the latest
+   [release](https://github.com/BrianSMiller/Azigram/releases).
+2. Copy it into the `plugins` folder of your PAMGuard installation.
+3. Restart PAMGuard.
+4. Add the module from **File > Add Module > Localisers > DIFAR Azigram Engine**.
+
+Full instructions are in the plugin's help pages, under **Help** in PAMGuard.
+
+## Building from source
+
+The repository is an Eclipse project that compiles against a PAMGuard project
+named `PAMGuard` in the same workspace.
+
+1. Import both projects into Eclipse.
+2. Select `src/Azigram` and choose **File > Export > Java > JAR file**.
+3. Tick **Export Java source files and resources** so the help pages are
+   included, and save the jar into the PAMGuard `plugins` folder.
+
+## Citing
+
+If you use this plugin, please cite the plugin release (DOI on the Zenodo record)
+and the method:
+
+Thode AM, Sakai T, Michalec J, Rankin S, Soldevilla MS, Martin B, Kim KH (2019).
+Displaying bioacoustic directional information from sonobuoys using "azigrams".
+J. Acoust. Soc. Am. 146:95-102. doi:10.1121/1.5114810
+
+## Authors
+
+Brian Miller (Australian Antarctic Division), PAMGuard implementation.
+Aaron Thode (Scripps Institution of Oceanography), original MATLAB implementation.
+
+## Licence
+
+GNU General Public License v3, matching PAMGuard.
