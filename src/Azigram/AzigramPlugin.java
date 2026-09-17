@@ -39,7 +39,7 @@ import fftManager.FFTDataUnit;
  * For quick prototyping it has been based on SpectrogramNoise and FFTDataUnit
  * super-classes, and should plot on the User Display Spectrogram (Swing). 
  *  
- * @author Brian Miller (Pamguard port) & Aaron Thode (original Matlab implementation)
+ * @author Brian Miller
  *
  */
 public class AzigramPlugin implements PamPluginInterface {

@@ -45,10 +45,14 @@ Thode AM, Sakai T, Michalec J, Rankin S, Soldevilla MS, Martin B, Kim KH (2019).
 Displaying bioacoustic directional information from sonobuoys using "azigrams".
 J. Acoust. Soc. Am. 146:95-102. doi:10.1121/1.5114810
 
-## Authors
+## Author
 
-Brian Miller (Australian Antarctic Division), PAMGuard implementation.
-Aaron Thode (Scripps Institution of Oceanography), original MATLAB implementation.
+Brian Miller, Australian Antarctic Division.
+
+## Acknowledgements
+
+The method is that of Thode et al. (2019), cited above. Aaron Thode also shared
+his MATLAB code, which helped while this implementation was being written.
 
 ## Licence
 
