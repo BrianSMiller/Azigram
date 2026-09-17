@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+message: "If you use this plugin, please cite it using the metadata below, and cite the method (Thode et al. 2019)."
+type: software
+title: "Azigram: a PAMGuard plugin for displaying directional information from DIFAR sonobuoys"
+abstract: >-
+  A PAMGuard plugin that shows directional information from DIFAR sonobuoys.
+  The Azigram looks like a spectrogram, but colour shows the bearing of arrival
+  in each time-frequency cell. It implements the Azigram algorithm and the
+  frequency domain demultiplexing of DIFAR signals described by Thode et al. (2019).
+authors:
+  - family-names: Miller
+    given-names: Brian S.
+    affiliation: Australian Antarctic Division
+    orcid: "https://orcid.org/0000-0001-7615-3044"
+version: 0.1.0
+date-released: "2026-09-18"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/BrianSMiller/Azigram"
+keywords:
+  - PAMGuard
+  - DIFAR
+  - sonobuoy
+  - azigram
+  - passive acoustic monitoring
+  - bioacoustics
+references:
+  - type: article
+    authors:
+      - family-names: Thode
+        given-names: Aaron M.
+      - family-names: Sakai
+        given-names: Taiki
+      - family-names: Michalec
+        given-names: Jeffrey
+      - family-names: Rankin
+        given-names: Shannon
+      - family-names: Soldevilla
+        given-names: Melissa S.
+      - family-names: Martin
+        given-names: Bruce
+      - family-names: Kim
+        given-names: Katherine H.
+    title: "Displaying bioacoustic directional information from sonobuoys using \"azigrams\""
+    journal: "The Journal of the Acoustical Society of America"
+    volume: 146
+    issue: 1
+    start: 95
+    end: 102
+    year: 2019
+    doi: "10.1121/1.5114810"
