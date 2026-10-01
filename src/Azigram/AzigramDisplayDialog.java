@@ -92,8 +92,19 @@ public class AzigramDisplayDialog extends PamDialog {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				FFTDataBlock inputBlock = (FFTDataBlock) azigramControl.azigramProcess.getInputDataBlock();
-				float outputSampleRate = (float) sampleRateCombo.getSelectedItem();	
-				int decimateFactor = (int) (inputBlock.getSampleRate()/outputSampleRate);
+				Object selected = sampleRateCombo.getSelectedItem();
+				/*
+				 * A module just added, as in the Viewer, may have no source yet or
+				 * one with no sample rate, so there is no resolution to show.
+				 */
+				if (inputBlock == null || inputBlock.getSampleRate() <= 0 || !(selected instanceof Number)) {
+					return;
+				}
+				float outputSampleRate = ((Number) selected).floatValue();
+				if (outputSampleRate <= 0) {
+					return;
+				}
+				int decimateFactor = Math.max(1, (int) (inputBlock.getSampleRate()/outputSampleRate));
 				resolutionPanel.setParams(outputSampleRate, inputBlock.getFftLength()/decimateFactor,
 						inputBlock.getFftHop()/decimateFactor);
 			}
