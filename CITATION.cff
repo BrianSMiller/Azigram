@@ -12,8 +12,9 @@ authors:
     given-names: Brian S.
     affiliation: Australian Antarctic Division
     orcid: "https://orcid.org/0000-0001-7615-3044"
-version: 0.1.0
-date-released: "2026-09-18"
+version: 0.1.1
+date-released: "2026-10-09"
+doi: 10.5281/zenodo.22821356
 license: GPL-3.0-or-later
 repository-code: "https://github.com/BrianSMiller/Azigram"
 keywords:

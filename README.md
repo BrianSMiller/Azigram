@@ -1,6 +1,6 @@
 # Azigram
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22821357.svg)](https://doi.org/10.5281/zenodo.22821357)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22821356.svg)](https://doi.org/10.5281/zenodo.22821357)
 
 A PAMGuard plugin that shows directional information from DIFAR sonobuoys.
 
@@ -43,8 +43,8 @@ named `PAMGuard` in the same workspace.
 If you use this plugin, please cite both the plugin and the method:
 
 Miller BS (2026). Azigram: a PAMGuard plugin for displaying directional
-information from DIFAR sonobuoys. Version 0.1.0. Zenodo.
-doi:10.5281/zenodo.22821357
+information from DIFAR sonobuoys. Zenodo.
+doi:10.5281/zenodo.22821356
 
 Thode AM, Sakai T, Michalec J, Rankin S, Soldevilla MS, Martin B, Kim KH (2019).
 Displaying bioacoustic directional information from sonobuoys using "azigrams".
