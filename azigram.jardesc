@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <jardesc>
-    <jar path="Azigram/releases/Azigram-0.1.1.jar"/>
+    <jar path="C:/analysis/Pamguard/target/plugins/Azigram_0_1_2.jar"/>
     <options buildIfNeeded="true" compress="true" descriptionLocation="/Azigram/azigram.jardesc" exportErrors="false" exportWarnings="true" includeDirectoryEntries="false" overwrite="false" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
     <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
     <selectedProjects/>
