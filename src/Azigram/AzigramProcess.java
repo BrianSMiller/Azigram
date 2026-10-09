@@ -6,6 +6,8 @@ import java.util.Vector;
 
 import PamController.PamControlledUnit;
 import PamController.PamController;
+import PamModel.PamModel;
+import PamUtils.PamCalendar;
 import PamUtils.PamUtils;
 import PamUtils.complex.ComplexArray;
 import PamguardMVC.PamDataBlock;
@@ -110,16 +112,29 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 	public void setupProcess() {
 		super.setupProcess();
 		
-		if (getParentDataBlock() != null) 
-			getParentDataBlock().deleteObserver(this);
-		if (azigramControl == null) 
+		if (azigramControl == null)
 			return;
-		
+
+		/*
+		 * Observe the source exactly once. setParentDataBlock subscribes this process,
+		 * wrapped in a threaded observer, but returns early if the block is already the
+		 * parent. A second, direct addObserver alongside it is not caught as a duplicate
+		 * (the list holds the wrapper, not this), so every FFT slice was processed twice:
+		 * the Azigram ran twice as fast, and its start samples went backwards often
+		 * enough to reset the display.
+		 */
 		sourceData = (FFTDataBlock) getInputDataBlock();
-		setParentDataBlock(sourceData);		//in case it wasn't parent already
-		if (sourceData != null)
-			sourceData.addObserver(this);	//should happen in setParentDataBlock, but doesn't always
-		
+		if (sourceData == null)
+			return;
+		if (getParentDataBlock() != sourceData) {
+			setParentDataBlock(sourceData);
+		}
+		else {
+			// same parent: drop any existing subscriptions (direct or threaded), then subscribe once
+			sourceData.deleteObserver(this);
+			sourceData.addObserver(this, PamModel.getPamModel().isMultiThread());
+		}
+
 		AzigramParameters p = azigramControl.azigramParameters;
 		azigramData.sortOutputMaps(sourceData.getChannelMap(), 
 				sourceData.getSequenceMapObject(),
@@ -168,7 +183,6 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 					azParams.backgroundPercentile,
 					azParams.backgroundStepDbPerSecond * dT,
 					(int) Math.max(1, Math.round(azParams.backgroundRunInSeconds / dT)));
-		
 		}
 	}
 
@@ -183,13 +197,23 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 		 */
 		FFTDataUnit fftDataUnit = (FFTDataUnit) arg;
 
+		/*
+		 * Start sample and duration both count samples at the output (decimated) rate,
+		 * which is the sample rate this process and its output block declare. Displays
+		 * place slices by start sample / sample rate, so an undecimated start sample
+		 * makes the Azigram run decimateFactor times faster than real time.
+		 */
 		AzigramDataUnit newFFTUnit = new AzigramDataUnit(fftDataUnit.getTimeMilliseconds(), fftDataUnit.getChannelBitmap(), 
-				fftDataUnit.getStartSample(), (long) (fftDataUnit.getSampleDuration()/decimateFactor), fftDataUnit.getFftData(), fftDataUnit.getFftSlice());
+				Math.round(fftDataUnit.getStartSample()/decimateFactor), (long) (fftDataUnit.getSampleDuration()/decimateFactor), 
+				fftDataUnit.getFftData(), fftDataUnit.getFftSlice());
 		newFFTUnit.setSequenceBitmap(fftDataUnit.getSequenceBitmapObject());
 		newFFTUnit.setDurationInMilliseconds(fftDataUnit.getDurationInMilliseconds());
 
 
-		runDemux(newFFTUnit);
+		if (!runDemux(newFFTUnit)) {
+			// no DIFAR pilot tones in this slice, so there is nothing to demultiplex
+			return;
+		}
 		
 		runAzigram(newFFTUnit);
 		
@@ -210,7 +234,39 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 	}
 	
 	
-	private void runDemux(AzigramDataUnit newFFTUnit) {
+	/**
+	 * Channels already warned about for missing pilot tones, so the warning is printed once
+	 * when a channel loses its pilots and once when it gets them back, not for every slice.
+	 */
+	private int noPilotChannels = 0;
+
+	/**
+	 * Note a slice with or without DIFAR pilot tones, and say so when a channel changes.
+	 * @return true if the slice can be demultiplexed
+	 */
+	private boolean checkPilots(AzigramDataUnit unit, boolean found) {
+		int chanMap = unit.getChannelBitmap();
+		boolean warned = (noPilotChannels & chanMap) != 0;
+		if (!found && !warned) {
+			noPilotChannels |= chanMap;
+			System.out.printf("Azigram: no DIFAR pilot tones on channel %d at %s; skipping this channel until they return%n",
+					PamUtils.getLowestChannel(chanMap), PamCalendar.formatDateTime(unit.getTimeMilliseconds()));
+		}
+		else if (found && warned) {
+			noPilotChannels &= ~chanMap;
+			System.out.printf("Azigram: DIFAR pilot tones back on channel %d at %s%n",
+					PamUtils.getLowestChannel(chanMap), PamCalendar.formatDateTime(unit.getTimeMilliseconds()));
+		}
+		return found;
+	}
+
+	/**
+	 * Demultiplex one FFT slice into the omni and directional spectra.
+	 * @return false if the slice holds no DIFAR pilot tones (for example a zero-filled channel
+	 * before its sonobuoy is deployed, or a sample rate too low to contain them), in which
+	 * case nothing is set on the unit.
+	 */
+	private boolean runDemux(AzigramDataUnit newFFTUnit) {
 
 		/*
 		 * Locate the pilot tones of the multiplexed DIFAR signals
@@ -221,6 +277,12 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 		double deltaF =  inputSampleRate / sourceData.getFftLength();
 		double Bwidth = 25; // Bandwidth above and below pilots in Hz;
 		ComplexArray fftData = newFFTUnit.getFftData();
+		int nBins = fftData.length();
+
+		// both pilot searches must fit within the spectrum
+		if (Math.ceil((2*7500+Bwidth) / deltaF) > nBins) {
+			return checkPilots(newFFTUnit, false);
+		}
 
 		int loIndex = (int) Math.floor((7500-Bwidth) / deltaF);
 		int hiIndex = (int) Math.ceil((7500+Bwidth) / deltaF);
@@ -247,6 +309,23 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 				i15 = i;
 			}
 		}
+
+		/*
+		 * N output bins, 0 to N-1, at frequencies k * deltaF from 0 up to (not including)
+		 * maxFreq: half the output FFT length, as for any PAMGuard FFT unit. The display
+		 * labels output bin k as k * deltaF, so bin k must hold frequency k * deltaF.
+		 * The directional sidebands sit k bins either side of the 15 kHz pilot, so bins
+		 * i15-(N-1) to i15+(N-1) must lie within the spectrum.
+		 * With no energy at all near 15 kHz (a zero-filled channel) the search never moves
+		 * off bin 0. Check that too.
+		 */
+		float maxFreq = azigramControl.azigramParameters.getOutputSampleRate()/2;
+		int N = (int) Math.floor(maxFreq / deltaF);
+		if (max <= 0 || i15 - (N-1) < 0 || i15 + N > nBins) {
+			return checkPilots(newFFTUnit, false);
+		}
+		checkPilots(newFFTUnit, true);
+
 //		System.out.println("Freq pilot: " + i75 + "; " + freqBins[i75] + 
 //						   " Phase pilot: "  + i15 + "; " + freqBins[i15]);		
 		Complex pilotPhase = new Complex(0,fftData.ang(i15)*-1).exp();
@@ -266,19 +345,21 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 		
 		
 
-		// P is omnidirectional signal in freq domain from [0-maxFreq) kHz
-		// Frequency domain downsampling -- maxFreq is the new sample rate 
-		float maxFreq = azigramControl.azigramParameters.getOutputSampleRate()/2;
-		int lastIndex = (int) Math.floor(maxFreq / deltaF);
+		// P is omnidirectional signal in freq domain from [0-maxFreq) Hz, bin k at k * deltaF
+		// Frequency domain downsampling -- 2 * maxFreq (above) is the new sample rate 
 
 		//Arrays.copyOfRange(double[] original, int from, int to)
-		ComplexArray P = new ComplexArray(Arrays.copyOfRange(fftReal, 1, lastIndex+1), 
-				Arrays.copyOfRange(fftImag,  1,  lastIndex+1));
+		ComplexArray P = new ComplexArray(Arrays.copyOfRange(fftReal, 0, N), 
+				Arrays.copyOfRange(fftImag,  0,  N));
 
-		int N = P.length();
-		
-		int iStart = i15-N;
-		int iStop = iStart + N;
+		/*
+		 * Lower sideband: Sm[k] is bin i15-k, k bins below the pilot.
+		 * Upper sideband: Sp[k] is bin i15+k, k bins above the pilot.
+		 * Bin 0 of both is the pilot itself (the carrier), and bin 0 of P is DC.
+		 * None of these carries a bearing, so all three are zeroed below.
+		 */
+		int iStart = i15-(N-1);
+		int iStop = i15+1;
 		ComplexArray SmFlip = new ComplexArray(
 				Arrays.copyOfRange(fftReal, iStart, iStop),
 				Arrays.copyOfRange(fftImag, iStart, iStop));
@@ -288,21 +369,21 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 			Sm.set(Sm.length()-i-1, SmFlip.getReal(i), SmFlip.getImag(i));
 		}
 		
-		iStart = i15+1;
+		iStart = i15;
 		iStop = iStart + N;
 		ComplexArray Sp = new ComplexArray(
 				Arrays.copyOfRange(fftReal, iStart, iStop),
 				Arrays.copyOfRange(fftImag, iStart, iStop));
 
+		// Drop DC and the carrier, so the strong pilot tone never reaches the output
+		P.set(0, 0, 0);
+		Sm.set(0, 0, 0);
+		Sp.set(0, 0, 0);
+
 		// Correct the amplitude by the amount that the FFT length changed
 		P.internalTimes(1/decimateFactor);
 		Sm.internalTimes(1/decimateFactor);
 		Sp.internalTimes(1/decimateFactor);
-		
-//		double[] F = new double[N]; 
-//		for (int i = 0; i<N; i++) {
-//			F[i] = i * deltaF;
-//		}
 		
 		Sm = Sm.times(pilotPhase);
 		Sp = Sp.times(pilotPhase);
@@ -331,6 +412,7 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 		newFFTUnit.setF(F);
 		newFFTUnit.setVx(vx);
 		newFFTUnit.setVy(vy);
+		return true;
 	}
 
 
@@ -344,7 +426,9 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 		for (int i = 0; i < len; i++) {
 			angle = Math.atan2(vx[i], vy[i])*180/Math.PI;
 			mu[i] = PamUtils.constrainedAngle(angle, 360);
-			mag[i] = 20* Math.log10(Math.sqrt(vx[i]*vx[i] + vy[i]*vy[i])); 
+			// Floor the magnitude so a zeroed bin (DC) gives a very low but finite dB
+			// value, rather than minus infinity reaching the background tracker
+			mag[i] = 20* Math.log10(Math.max(Math.sqrt(vx[i]*vx[i] + vy[i]*vy[i]), Double.MIN_NORMAL));
 		}
 		
 		du.setDirectionalAngle(mu);
@@ -429,6 +513,7 @@ public class AzigramProcess extends PamProcess implements ScaledFFTDataSource {
 	
 	@Override
 	public void pamStart() {
+		noPilotChannels = 0;
 	}
 
 	@Override
